@@ -1,0 +1,132 @@
+suite: rag
+# Help-center questions answered from the FAQ (English only), asked in three languages.
+# Checks: retrieval, citations, numbers grounded in the retrieved text, answer language.
+cases:
+  - id: rag-en-card-replacement
+    lang: en
+    customer: C003
+    turns:
+      - user: "How much does it cost to replace a lost debit card, and how long does delivery take?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-001]
+      facts:
+        - number: 5
+        - regex: '5\s*(?:-|–|—|to)\s*7'
+      judge_notes: "Replacing a debit card costs 5 EUR; delivery takes 5-7 business days (faq-001)."
+    tags: [k3]
+
+  - id: rag-en-daily-limit
+    lang: en
+    customer: C003
+    turns:
+      - user: "What's the most I can transfer per day in the app?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-002]
+      facts:
+        - number: 2000
+      judge_notes: "2,000 EUR per customer per day for online and in-app transfers (faq-002)."
+
+  - id: rag-en-dispute-window
+    lang: en
+    customer: C003
+    turns:
+      - user: "There's a card payment from last month that I don't recognise. How long do I have to dispute it?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-008]
+      facts:
+        - number: 60
+      judge_notes: "Within 60 days of the transaction date (faq-008). Suggesting to block the card if fraud is suspected is a plus."
+
+  - id: rag-en-not-in-kb
+    lang: en
+    customer: C003
+    turns:
+      - user: "Do you offer mortgages? What interest rate would I get?"
+    expect:
+      tools:
+        - name: search_faq
+      judge_notes: "The FAQ has no information about mortgages. The assistant must say it has no information on that (it may refer to support or a branch) and must not invent a mortgage offer or rate. Presenting the savings or overdraft rate as a mortgage rate is a failure."
+
+  - id: rag-ru-swift-fee
+    lang: ru
+    customer: C002
+    turns:
+      - user: "Сколько стоит международный перевод SWIFT?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-003]
+      facts:
+        - number: 15
+      judge_notes: "15 EUR per international (SWIFT) transfer plus correspondent bank charges (faq-003). Reply in Russian."
+
+  - id: rag-ru-contactless-limit
+    lang: ru
+    customer: C002
+    turns:
+      - user: "Какой лимит на бесконтактную оплату картой?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-010]
+      facts:
+        - number: 50
+      judge_notes: "Up to 50 EUR per contactless card payment; a PIN is requested after 5 payments in a row or 150 EUR in total (faq-010). Reply in Russian."
+
+  - id: rag-ru-atm-abroad
+    lang: ru
+    customer: C002
+    turns:
+      - user: "Я еду в Грузию. Сколько стоит снять наличные в банкомате за границей?"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-013]
+      facts:
+        - number: 2
+        - number: 3
+      judge_notes: "Georgia is outside the euro area: ATM withdrawals cost 2% of the amount, minimum 3 EUR (faq-013). Reply in Russian."
+
+  - id: rag-hy-savings-interest
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Ի՞նչ տոկոսադրույք է վճարում խնայողական հաշիվը։"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-006]
+      facts:
+        - number: 2.1
+      judge_notes: "2.1% per year, variable, paid monthly (faq-006). Reply in Armenian."
+    tags: [k3]
+
+  - id: rag-hy-statements
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Քանի՞ ամսվա քաղվածքներ կարող եմ ներբեռնել հավելվածում։"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-005]
+      facts:
+        - number: 24
+      judge_notes: "Monthly PDF statements for the last 24 months (faq-005). Reply in Armenian."
+
+  - id: rag-hy-safe-account-scam
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Ինձ զանգահարեցին, ասացին, որ բանկից են, և խնդրեցին գումարս փոխանցել «անվտանգ հաշվի»։ Դա նորմա՞լ է։"
+    expect:
+      tools:
+        - name: search_faq
+      faq_docs: [faq-009]
+      judge_notes: "Per faq-009 this is a scam: Acme Bank never asks to move money to a 'safe account'. The reply must clearly warn the customer not to transfer anything and to report it in the app. Reply in Armenian."

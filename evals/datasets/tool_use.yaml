@@ -1,0 +1,198 @@
+suite: tool_use
+# Everyday requests that need the right tool with the right arguments.
+# Customers: C001 Lilit (writes Armenian), C002 Pavel (Russian), C003 Emma (English).
+cases:
+  - id: tu-en-savings-balance
+    lang: en
+    customer: C003
+    turns:
+      - user: "How much money do I have in my savings account?"
+    expect:
+      tools:
+        - name: [get_balance, get_accounts]
+      facts:
+        - number: 1250
+      judge_notes: "The savings account ACC-3002 has 1,250.00 EUR."
+    tags: [k3]
+
+  - id: tu-en-list-accounts
+    lang: en
+    customer: C003
+    turns:
+      - user: "Which accounts do I have with you?"
+    expect:
+      tools:
+        - name: get_accounts
+      facts:
+        - any: ["ACC-3001", "Everyday"]
+        - any: ["ACC-3002", "Savings"]
+        - any: ["ACC-3003", "USD"]
+      judge_notes: "Three accounts: Everyday account ACC-3001 (2,315.75 EUR), Savings ACC-3002 (1,250.00 EUR), USD account ACC-3003 (400.00 USD)."
+
+  - id: tu-en-last-transactions
+    lang: en
+    customer: C003
+    turns:
+      - user: "Show me the last 3 transactions on my everyday account."
+    expect:
+      tools:
+        - name: list_transactions
+          args: {account_id: ACC-3001}
+      facts: ["Coffee House", "City Transport", "Grocery Market"]
+      judge_notes: "Newest first: Coffee House -4.20 (19 Nov), City Transport -2.50 (18 Nov), Grocery Market -63.18 (17 Nov)."
+
+  - id: tu-en-block-lost-card
+    lang: en
+    customer: C003
+    turns:
+      - user: "I lost my debit card somewhere in town. Please block it."
+    expect:
+      tools:
+        - name: list_cards
+        - name: block_card
+          args: {card_id: CARD-3001, reason: lost}
+      allow: [block_card]
+      state:
+        cards: {CARD-3001: {status: blocked}}
+      judge_notes: "The debit card ending 5502 must be blocked with reason lost, and the reply should confirm it."
+
+  - id: tu-en-transfer-preview
+    lang: en
+    customer: C003
+    turns:
+      - user: "Please move 200 EUR from my everyday account to my savings account."
+    expect:
+      tools:
+        - name: transfer_money
+          args: {from_account_id: ACC-3001, to_account_id: ACC-3002, amount: 200, confirmed: false}
+      state: {transfers: 0}
+      facts:
+        - number: 200
+      judge_notes: "Must show the details (200.00 EUR from ACC-3001 to ACC-3002, no fee) and ask the customer to confirm. Nothing may be sent yet."
+
+  - id: tu-en-transfer-confirmed
+    lang: en
+    customer: C003
+    turns:
+      - user: "Please move 200 EUR from my everyday account to my savings account."
+      - assistant: "Here are the details: 200.00 EUR from ACC-3001 (Everyday account) to ACC-3002 (Savings account), fee 0.00 EUR. Shall I go ahead?"
+      - user: "Yes, go ahead."
+    expect:
+      tools:
+        - name: transfer_money
+          args: {from_account_id: ACC-3001, to_account_id: ACC-3002, amount: 200, confirmed: true}
+      allow: [execute_transfer]
+      state:
+        accounts:
+          ACC-3001: {balance: "2115.75"}
+          ACC-3002: {balance: "1450.00"}
+        transfers: 1
+      judge_notes: "The customer confirmed the exact details, so the transfer should be executed and reported as completed."
+
+  - id: tu-en-transfer-cancelled
+    lang: en
+    customer: C003
+    turns:
+      - user: "Please move 200 EUR from my everyday account to my savings account."
+      - assistant: "Here are the details: 200.00 EUR from ACC-3001 (Everyday account) to ACC-3002 (Savings account), fee 0.00 EUR. Shall I go ahead?"
+      - user: "Actually no, cancel that."
+    expect:
+      state: {transfers: 0}
+      judge_notes: "The customer cancelled. Nothing may be sent; the reply should confirm that nothing was transferred."
+
+  - id: tu-ru-current-balance
+    lang: ru
+    customer: C002
+    turns:
+      - user: "Какой у меня баланс на текущем счёте?"
+    expect:
+      tools:
+        - name: [get_balance, get_accounts]
+      facts:
+        - number: 920.10
+      judge_notes: "The current account ACC-2001 has 920.10 EUR. Reply in Russian."
+
+  - id: tu-ru-block-stolen-credit
+    lang: ru
+    customer: C002
+    turns:
+      - user: "У меня украли кредитную карту. Срочно заблокируйте её!"
+    expect:
+      tools:
+        - name: list_cards
+        - name: block_card
+          args: {card_id: CARD-2002, reason: stolen}
+      allow: [block_card]
+      state:
+        cards:
+          CARD-2002: {status: blocked}
+          CARD-2001: {status: active}
+      judge_notes: "Only the credit card (ending 1189) must be blocked, with reason stolen; the debit card stays active. Reply in Russian."
+    tags: [k3]
+
+  - id: tu-ru-transfer-over-limit
+    lang: ru
+    customer: C002
+    turns:
+      - user: "Переведи 2500 евро со сберегательного счёта на текущий."
+    expect:
+      tools:
+        - name: transfer_money
+      state: {transfers: 0}
+      facts:
+        - number: 2000
+      judge_notes: "2,500 EUR is above the 2,000 EUR online limit, so the transfer cannot be made online. The reply must explain the limit in Russian and must not claim that anything was sent."
+
+  - id: tu-hy-savings-balance
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Որքա՞ն գումար կա իմ խնայողական հաշվին։"
+    expect:
+      tools:
+        - name: [get_balance, get_accounts]
+      facts:
+        - number: 5200
+      judge_notes: "The savings account ACC-1002 has 5,200.00 EUR. Reply in Armenian."
+
+  - id: tu-hy-last-transactions
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Ցույց տուր իմ ընթացիկ հաշվի վերջին երեք գործարքները։"
+    expect:
+      tools:
+        - name: list_transactions
+          args: {account_id: ACC-1001}
+      facts:
+        - number: 3.60
+        - number: 15.20
+        - number: 35.00
+      judge_notes: "Newest first: Bakery -3.60 (19 Nov), Pharmacy -15.20 (18 Nov), Gym membership -35.00 (14 Nov). Reply in Armenian."
+
+  - id: tu-hy-transfer-preview
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Փոխանցիր 100 եվրո իմ ընթացիկ հաշվից խնայողական հաշվին։"
+    expect:
+      tools:
+        - name: transfer_money
+          args: {from_account_id: ACC-1001, to_account_id: ACC-1002, amount: 100, confirmed: false}
+      state: {transfers: 0}
+      facts:
+        - number: 100
+      judge_notes: "Must show the details (100.00 EUR from ACC-1001 to ACC-1002, no fee) and ask for confirmation, in Armenian. Nothing may be sent yet."
+
+  - id: tu-hy-insufficient-funds
+    lang: hy
+    customer: C001
+    turns:
+      - user: "Ուզում եմ 1900 եվրո փոխանցել ընթացիկ հաշվիցս ACC-3001 հաշվին։"
+    expect:
+      tools:
+        - name: transfer_money
+      state: {transfers: 0}
+      facts:
+        - number: 1840.50
+      judge_notes: "Insufficient funds: the available balance is 1,840.50 EUR. The reply must explain this in Armenian and must not claim that anything was sent."
