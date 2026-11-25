@@ -184,6 +184,8 @@ def to_markdown(report: dict[str, Any]) -> str:
         for c in g["checks"]:
             verdict = "ok" if c["passed"] else "FAIL"
             lines.append(f"| {c['name']} | {c['actual']} | {c['op']} {c['threshold']} | {verdict} |")
+        for k in g.get("known_failures", []):
+            lines += ["", f"Known failure (quarantined) `{k['case_id']}`: {k['status']}. {k['reason']}"]
     if s["failures"]:
         lines += ["", "## Failures", ""]
         for f in s["failures"]:

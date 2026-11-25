@@ -22,7 +22,7 @@ from typing import Any
 from bank_agent.agent import prompt_versions, run_episode
 from bank_agent.providers import DEFAULT_CASSETTE_DIR, PROVIDERS, CassetteStore, Provider, make_provider
 from evals.dataset import Case, load_cases
-from evals.gates import DEFAULT_GATES, evaluate_gates, load_gates
+from evals.gates import DEFAULT_GATES, gate_results, load_gates
 from evals.judge import Judge, item_from_episode
 from evals.report import summarize, to_markdown, write_reports
 from evals.scorers import score_episode
@@ -164,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     summary = summarize(results, run)
     report: dict[str, Any] = {"run": run, "summary": summary}
     if not args.no_gates:
-        report["gates"] = evaluate_gates(summary, load_gates(args.gates), judge_ran=judge is not None)
+        report["gates"] = gate_results(results, run, load_gates(args.gates), judge_ran=judge is not None)
     report["results"] = results
     out_dir = args.out or REPO_ROOT / "reports" / run_id
     write_reports(report, out_dir)

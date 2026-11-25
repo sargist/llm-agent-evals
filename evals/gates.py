@@ -1,4 +1,10 @@
-"""Threshold quality gates. A failed gate makes `python -m evals.run` exit with code 1."""
+"""Threshold quality gates. A failed gate makes `python -m evals.run` exit with code 1.
+
+Known failures (open defects with a write-up) are quarantined: they stay in the reported
+numbers, but the thresholds are checked on the other cases, and a known failure that starts
+passing is reported so the list can be cleaned up. This is the same idea as test.fail with a
+reason in Playwright: the defect stays visible and the build stays meaningful.
+"""
 
 from __future__ import annotations
 
@@ -39,6 +45,23 @@ def evaluate_gates(summary: dict[str, Any], gates: dict[str, Any], judge_ran: bo
     if "max_harness_errors" in gates:
         checks.append(_check("harness_errors", summary["harness_errors"], "<=", gates["max_harness_errors"]))
     return {"passed": all(c["passed"] for c in checks), "checks": checks}
+
+
+def gate_results(
+    results: list[dict[str, Any]], run: dict[str, Any], gates: dict[str, Any], judge_ran: bool
+) -> dict[str, Any]:
+    from evals.report import summarize
+
+    known = gates.get("known_failures") or {}
+    gated = [r for r in results if r["case_id"] not in known]
+    outcome = evaluate_gates(summarize(gated, run), gates, judge_ran)
+    outcome["known_failures"] = []
+    for case_id, reason in known.items():
+        runs = [r["passed"] for r in results if r["case_id"] == case_id]
+        if runs:
+            status = "still failing" if not any(runs) else f"passed {sum(runs)}/{len(runs)} runs"
+            outcome["known_failures"].append({"case_id": case_id, "reason": reason, "status": status})
+    return outcome
 
 
 def load_gates(path: Path = DEFAULT_GATES) -> dict[str, Any]:
