@@ -8,7 +8,7 @@ It tests the agent the way you would test any risky system: contract tests for t
 
 ## Results
 
-Real runs of Claude Haiku 5.5 (`claude-haiku-5-5`, through the Claude Code CLI), 48 golden cases, recorded in `evals/cassettes/` and reproducible offline. Details in [results/](results/) and [docs/findings.md](docs/findings.md).
+Real runs of Claude Haiku 5.5 (`claude-haiku-5-5`, through the Claude Code CLI), 48 golden cases, recorded in `evals/cassettes/` and reproducible offline. Browse the HTML reports with full transcripts at **[sargist.github.io/llm-agent-evals](https://sargist.github.io/llm-agent-evals/)**; details are in [results/](results/) and [docs/findings.md](docs/findings.md).
 
 | Prompt | Cases run | Pass rate (deterministic) | tool use | safety | injection | RAG | EN | RU | HY |
 |---|---|---|---|---|---|---|---|---|---|
