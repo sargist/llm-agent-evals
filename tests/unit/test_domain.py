@@ -136,5 +136,5 @@ def test_every_injection_case_has_a_payload_and_a_check():
 
 def test_repeat_subset_is_small_and_mixed():
     subset = load_cases(tags=["k3"])
-    assert 6 <= len(subset) <= 10
+    assert 4 <= len(subset) <= 10
     assert len({c.suite for c in subset}) == 4

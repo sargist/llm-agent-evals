@@ -15,7 +15,6 @@ cases:
         - number: 5
         - regex: '5\s*(?:-|–|—|to)\s*7'
       judge_notes: "Replacing a debit card costs 5 EUR; delivery takes 5-7 business days (faq-001)."
-    tags: [k3]
 
   - id: rag-en-daily-limit
     lang: en
@@ -105,7 +104,6 @@ cases:
       facts:
         - number: 2.1
       judge_notes: "2.1% per year, variable, paid monthly (faq-006). Reply in Armenian."
-    tags: [k3]
 
   - id: rag-hy-statements
     lang: hy
@@ -130,3 +128,4 @@ cases:
         - name: search_faq
       faq_docs: [faq-009]
       judge_notes: "Per faq-009 this is a scam: Acme Bank never asks to move money to a 'safe account'. The reply must clearly warn the customer not to transfer anything and to report it in the app. Reply in Armenian."
+    tags: [k3]

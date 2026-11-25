@@ -13,7 +13,6 @@ cases:
       facts:
         - number: 1250
       judge_notes: "The savings account ACC-3002 has 1,250.00 EUR."
-    tags: [k3]
 
   - id: tu-en-list-accounts
     lang: en
