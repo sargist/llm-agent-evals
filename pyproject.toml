@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-agent-evals"
+version = "0.1.0"
+description = "Evaluation and test harness for a tool-using (MCP) LLM agent"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sargis Taranyan" }]
+dependencies = [
+    "mcp>=1.27,<2",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic"]
+dev = ["pytest>=8", "ruff==0.17.6"]
+
+[tool.setuptools.packages.find]
+include = ["bank_agent*", "evals*"]
+
+[tool.setuptools.package-data]
+bank_agent = ["faq/*.md", "prompts/*.md"]
+evals = ["datasets/*.yaml", "calibration/*.yaml", "prompts/*.md", "gates.yaml"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["evals/cassettes"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # Armenian/Cyrillic text in strings and comments is intentional
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
