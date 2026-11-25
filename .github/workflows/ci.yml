@@ -21,7 +21,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: |
+            pyproject.toml
+            constraints.txt
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
@@ -32,4 +34,74 @@ jobs:
         with:
           name: junit-py${{ matrix.python }}
           path: reports/
+          retention-days: 14
+
+  evals:
+    name: replayed evals, quality gates and judge calibration
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            constraints.txt
+      - run: pip install -e . -c constraints.txt
+      - name: Quality gate on the current prompt (v3, replayed)
+        run: python -m evals.run --provider replay --prompt v3 --no-judge --out reports/v3
+      - name: The gate rejects the v1 prompt
+        run: |
+          set +e
+          python -m evals.run --provider replay --prompt v1 --no-judge --out reports/v1
+          code=$?
+          if [ "$code" -ne 1 ]; then echo "expected the gate to fail v1 with exit code 1, got $code"; exit 1; fi
+          echo "v1 fails the quality gate, as expected"
+      - name: Judge calibration against human labels (replayed)
+        run: python -m evals.calibrate --provider replay --out reports/calibration
+      - name: Job summary
+        if: ${{ !cancelled() }}
+        run: |
+          cat reports/v3/summary.md >> "$GITHUB_STEP_SUMMARY"
+          cat reports/calibration/judge-calibration.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: eval-reports
+          path: reports/
+          retention-days: 30
+
+  promptfoo:
+    name: promptfoo (replayed, offline)
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            constraints.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install -e . -c constraints.txt
+      - name: promptfoo eval
+        working-directory: promptfoo
+        env:
+          PROMPTFOO_PYTHON: python
+          PROMPTFOO_DISABLE_TELEMETRY: "1"
+          PROMPTFOO_DISABLE_UPDATE: "1"
+        run: npx -y promptfoo@0.126.0 eval -c promptfooconfig.yaml --no-cache --no-table -o output/results.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: promptfoo-results
+          path: promptfoo/output/
           retention-days: 14
